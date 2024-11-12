@@ -8,16 +8,30 @@ dependencies = [
   dependency('gobject-2.0')
   ]
 
-gjoystick_sources = ['gjoystick.c']
+system = build_machine.system()
 
-gjoysticklib = shared_library('gjoystick-1.0',
-  gjoystick_sources,
-  vala_vapi: 'gjoystick-1.0.vapi',
-  vala_gir: 'gjoystick-1.0.gir',
-  include_directories: './',
-  dependencies: dependencies,
-  install: true
+gjoystick_sources = ['joystick_manager.c', 'joystick_listener.c']
+
+if system == 'windows'
+  gjoysticklib = shared_library('gjoystick-1.0',
+    gjoystick_sources,
+    vala_vapi: 'gjoystick-1.0.vapi',
+    vala_gir: 'gjoystick-1.0.gir',
+    include_directories: './',
+    dependencies: dependencies,
+    install: true
   )
+else
+  dependencies += dependency('libevdev')
+  gjoysticklib = shared_library('gjoystick-1.0',
+    gjoystick_sources,
+    vala_vapi: 'gjoystick-1.0.vapi',
+    vala_gir: 'gjoystick-1.0.gir',
+    include_directories: './',
+    dependencies: dependencies,
+    install: true
+  )
+endif
 
 pkg.generate(gjoysticklib,
   version: '1.0',
@@ -32,7 +46,7 @@ headers = ['GJoystick-1.0.h']
 
 install_headers(headers, subdir: 'gjoystick-1.0')
 
-introspection_sources = ['gjoystick.c', 'GJoystick-1.0.h']
+introspection_sources = ['joystick_manager.c', 'joystick_listener.c', 'GJoystick-1.0.h']
 
 g_ir_compiler = find_program('g-ir-compiler')
 gjoystick_gir = gnome.generate_gir(gjoysticklib,
