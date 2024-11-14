@@ -14,6 +14,7 @@
 struct _GJoystickListener {
     GObject parent_instance;
     GJoystickInfo *info;
+    guint timeout_id;
 #ifdef _WIN32
     UINT joystick_id;
 #else
@@ -51,6 +52,11 @@ static gboolean joystick_poll_windows(GJoystickListener *self) {
 #else
 // Linux polling function
 static gboolean joystick_poll_linux(GJoystickListener *self) {
+    // check if the file descriptor is valid
+    if (self->fd < 0) {
+        return G_SOURCE_REMOVE;
+    }
+
     struct js_event event;
     ssize_t bytes = read(self->fd, &event, sizeof(event));
 
@@ -67,9 +73,12 @@ static gboolean joystick_poll_linux(GJoystickListener *self) {
 
 // Start listening for joystick events
 void gjoystick_listener_start(GJoystickListener *self) {
+    if(self->timeout_id > 0) {
+        gjoystick_listener_stop(self);
+    }
 #ifdef _WIN32
     self->joystick_id = self->info->id;
-    g_timeout_add(16, (GSourceFunc) joystick_poll_windows, self);
+    self->timeout_id = g_timeout_add(1, (GSourceFunc) joystick_poll_windows, self);
 #else
     gchar *device_path = g_strdup_printf("/dev/input/js%d", self->info->id);
     self->fd = open(device_path, O_RDONLY | O_NONBLOCK);
@@ -80,17 +89,22 @@ void gjoystick_listener_start(GJoystickListener *self) {
     }
     g_free(device_path);
 
-    g_timeout_add(16, (GSourceFunc)joystick_poll_linux, self);
+    self->timeout_id = g_timeout_add(1, (GSourceFunc)joystick_poll_linux, self);
 #endif
 }
 
 // Stop listening for joystick events
 void gjoystick_listener_stop(GJoystickListener *self) {
+    if (self->timeout_id > 0) {
+        g_source_remove(self->timeout_id);
+        self->timeout_id = 0;
+    }
 #ifdef _WIN32
     // No specific stop action needed for Windows
 #else
     if (self->fd >= 0) {
         close(self->fd);
+        self->fd = -1;
     }
 #endif
 }
@@ -101,9 +115,28 @@ GJoystickListener *gjoystick_listener_new(GJoystickInfo *info) {
     return listener;
 }
 
-static void gjoystick_listener_init(GJoystickListener *self) {}
+static void gjoystick_listener_dispose(GObject *object) {
+    GJoystickListener *self = GJOYSTICK_LISTENER(object);
+
+    gjoystick_listener_stop(self);
+    // Chain up to the parent class's dispose method
+    G_OBJECT_CLASS(gjoystick_listener_parent_class)->dispose(object);
+}
+
+static void gjoystick_listener_init(GJoystickListener *self) {
+#ifdef _WIN32
+    self->joystick_id = -1;
+#else
+    self->fd = -1;
+#endif
+}
 
 static void gjoystick_listener_class_init(GJoystickListenerClass *klass) {
+    // Set the dispose method
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->dispose = gjoystick_listener_dispose;
+
+    // Define signals
     joystick_signals[GJOYSTICK_BUTTON_PRESSED] = g_signal_new(
         "button-pressed", G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST,
         0, NULL, NULL, NULL, G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_BOOLEAN);
