@@ -50,6 +50,8 @@ GList *gjoystick_manager_list_joysticks(GJoystickManager *self);
  */
 void gjoystick_manager_free_joystick_list(GList *joysticks);
 
+GJoystickInfo* gjoystick_manager_find_joystick_by_name(GJoystickManager *self, const gchar *name);
+
 // Joystick Listener API
 /**
  * gjoystick_listener_new:

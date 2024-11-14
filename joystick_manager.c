@@ -79,6 +79,23 @@ GList *gjoystick_manager_list_joysticks(GJoystickManager *self) {
     return joysticks;
 }
 
+GJoystickInfo* gjoystick_manager_find_joystick_by_name(GJoystickManager *self, const gchar *name)
+{
+    GList *joysticks = gjoystick_manager_list_joysticks(self);
+    GList *iter;
+    for (iter = joysticks; iter != NULL; iter = g_list_next(iter)) {
+        GJoystickInfo *info = (GJoystickInfo *)iter->data;
+        if (g_strcmp0(info->device_name, name) == 0) {
+            // copy the info and free the list
+            info = g_memdup(info, sizeof(GJoystickInfo));
+            gjoystick_manager_free_joystick_list(joysticks);
+            return info;
+        }
+    }
+    gjoystick_manager_free_joystick_list(joysticks);
+    return NULL;
+}
+
 // Free joystick list
 void gjoystick_manager_free_joystick_list(GList *joysticks) {
     g_list_free_full(joysticks, (GDestroyNotify)g_free);
