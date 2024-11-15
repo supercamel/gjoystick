@@ -129,6 +129,7 @@ static void gjoystick_listener_init(GJoystickListener *self) {
 #else
     self->fd = -1;
 #endif
+    self->timeout_id = 0;
 }
 
 static void gjoystick_listener_class_init(GJoystickListenerClass *klass) {

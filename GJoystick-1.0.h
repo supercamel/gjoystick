@@ -50,6 +50,15 @@ GList *gjoystick_manager_list_joysticks(GJoystickManager *self);
  */
 void gjoystick_manager_free_joystick_list(GList *joysticks);
 
+/**
+ * gjoystick_manager_find_joystick_by_name:
+ * @self: (in): a #GJoystickManager instance.
+ * @name: (in): the name of the joystick to find.
+ * 
+ * Finds a joystick by its name.
+ * 
+ * Returns: (transfer full): a #GJoystickInfo struct representing the joystick, or %NULL if not found.
+ */
 GJoystickInfo* gjoystick_manager_find_joystick_by_name(GJoystickManager *self, const gchar *name);
 
 // Joystick Listener API

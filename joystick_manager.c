@@ -87,7 +87,7 @@ GJoystickInfo* gjoystick_manager_find_joystick_by_name(GJoystickManager *self, c
         GJoystickInfo *info = (GJoystickInfo *)iter->data;
         if (g_strcmp0(info->device_name, name) == 0) {
             // copy the info and free the list
-            info = g_memdup(info, sizeof(GJoystickInfo));
+            info = g_memdup2(info, sizeof(GJoystickInfo));
             gjoystick_manager_free_joystick_list(joysticks);
             return info;
         }
